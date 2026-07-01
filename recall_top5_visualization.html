@@ -67,8 +67,17 @@
   .card-head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
   .num{flex:0 0 auto;width:34px;height:34px;border-radius:9px;display:grid;place-items:center;
     font-weight:700;font-size:.95rem;background:linear-gradient(135deg,var(--accent),#8957e5);color:#fff}
+  .qhead{min-width:0;flex:1}
   .card-head .qsub{font-weight:600;font-size:.92rem;color:var(--txt)}
-  .card-head .pid{font-size:.68rem;color:var(--muted);font-family:ui-monospace,monospace}
+  .card-head .pid{font-size:.68rem;color:var(--muted);font-family:ui-monospace,monospace;
+    cursor:pointer;word-break:break-all;transition:color .15s}
+  .card-head .pid:hover{color:var(--accent)}
+  .copybtn{flex:0 0 auto;align-self:flex-start;cursor:pointer;white-space:nowrap;
+    background:var(--panel2);border:1px solid var(--border);color:var(--muted);
+    border-radius:8px;padding:6px 10px;font-size:.72rem;transition:all .15s}
+  .copybtn:hover{border-color:var(--accent);color:var(--accent)}
+  .copybtn.ok{border-color:var(--c-interaction);color:var(--c-interaction);
+    background:color-mix(in srgb,var(--c-interaction) 14%,transparent)}
 
   /* query tag chips */
   .qtags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
@@ -88,6 +97,9 @@
   .rank.r3{background:#cd7f32}.rank.r4{background:#3d4756}.rank.r5{background:#333c49}
   .rinfo .rsub{font-size:.83rem;color:var(--txt);font-weight:500}
   .rinfo .rmeta{font-size:.7rem;color:var(--muted);margin-top:1px}
+  .rinfo .rpid{font-size:.66rem;color:#6e7a8a;font-family:ui-monospace,monospace;
+    margin-top:2px;cursor:pointer;word-break:break-all;transition:color .15s}
+  .rinfo .rpid:hover{color:var(--accent)}
   .rscore{text-align:right;min-width:104px}
   .rscore .val{font-size:.82rem;font-weight:700;color:var(--accent)}
   .rscore .track{width:96px;height:5px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:4px;overflow:hidden}
@@ -181,19 +193,25 @@ function cardHtml(item,idx){
        <div class="rinfo">
          <div class="rsub">${t.subject||"—"}</div>
          <div class="rmeta">${[t.gameplay,t.artStyle].filter(Boolean).join(" · ")}</div>
+         <div class="rpid" title="点击复制此 projectId">${t.projectId}</div>
        </div>
        <div class="rscore">
          <div class="val">${t.score.toFixed(3)}</div>
          <div class="track"><div class="fill" style="width:${scale(t.score)}%"></div></div>
        </div>
      </div>`).join("");
+  // 整组 pid：根 case + top5
+  const groupPids=[item.projectId,...item.top5.map(t=>t.projectId)];
   return `<div class="card">
     <div class="card-head">
       <div class="num">${idx+1}</div>
-      <div>
+      <div class="qhead">
         <div class="qsub">${q.subject||"(无题材)"}</div>
-        <div class="pid">${item.projectId}</div>
+        <div class="pid" title="点击复制此 projectId">${item.projectId}</div>
       </div>
+      <button class="copybtn" data-pids="${groupPids.join(",")}" title="复制本组全部 6 个 projectId">
+        📋 复制全部 pid
+      </button>
     </div>
     <div class="qtags">${qtags}</div>
     <div class="sec-label">Top 5 相似召回</div>
@@ -204,7 +222,7 @@ function cardHtml(item,idx){
 function searchText(item){
   const q=item.queryTags;
   const parts=[item.projectId,...Object.values(q)];
-  item.top5.forEach(t=>parts.push(t.subject,t.gameplay,t.artStyle));
+  item.top5.forEach(t=>parts.push(t.projectId,t.subject,t.gameplay,t.artStyle));
   return parts.join(" ").toLowerCase();
 }
 DATA.forEach(d=>d._search=searchText(d));
@@ -222,6 +240,43 @@ function render(){
 }
 document.getElementById("search").addEventListener("input",render);
 document.getElementById("sort").addEventListener("change",render);
+
+// ---- 复制 pid（事件委托）----
+function copyText(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    return navigator.clipboard.writeText(text);
+  }
+  // 兜底（file:// 或旧浏览器）
+  const ta=document.createElement("textarea");
+  ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy");}catch(e){}
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+grid.addEventListener("click",e=>{
+  const btn=e.target.closest(".copybtn");
+  if(btn){
+    const pids=btn.dataset.pids.split(",");
+    copyText(pids.join("\n")).then(()=>{
+      const old=btn.textContent;
+      btn.classList.add("ok");
+      btn.textContent=`✓ 已复制 ${pids.length} 个`;
+      setTimeout(()=>{btn.classList.remove("ok");btn.textContent=old;},1400);
+    });
+    return;
+  }
+  // 单个 pid（根 case 或 top5）点击复制
+  const pidEl=e.target.closest(".pid,.rpid");
+  if(pidEl){
+    const t=pidEl.textContent.trim();
+    copyText(t).then(()=>{
+      const old=pidEl.textContent;
+      pidEl.textContent="✓ 已复制";
+      setTimeout(()=>{pidEl.textContent=old;},900);
+    });
+  }
+});
 render();
 </script>
 </body>

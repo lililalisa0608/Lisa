@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目召回抽取结果可视化 · 3 Cases</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#2b3444;
+    --txt:#e6edf3; --muted:#8b949e; --accent:#58a6ff;
+    --c-subject:#f778ba; --c-gameplay:#58a6ff; --c-art:#bc8cff;
+    --c-mood:#f0883e; --c-interaction:#3fb950; --c-social:#e3b341;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#18202e 0%,var(--bg) 55%);
+    color:var(--txt);min-height:100vh;padding:40px 20px;line-height:1.6;
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+  header{text-align:center;margin-bottom:40px}
+  header h1{font-size:1.9rem;font-weight:700;letter-spacing:.5px}
+  header p{color:var(--muted);margin-top:8px;font-size:.95rem}
+  .meta-bar{
+    display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:20px;
+  }
+  .chip{
+    background:var(--panel);border:1px solid var(--border);border-radius:999px;
+    padding:6px 16px;font-size:.82rem;color:var(--muted);
+  }
+  .chip b{color:var(--txt)}
+  .chip .dot{display:inline-block;width:8px;height:8px;border-radius:50%;
+    background:var(--c-interaction);margin-right:6px;vertical-align:middle}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:22px}
+  .card{
+    background:linear-gradient(180deg,var(--panel) 0%,var(--panel2) 100%);
+    border:1px solid var(--border);border-radius:16px;padding:22px;
+    box-shadow:0 8px 28px rgba(0,0,0,.35);transition:transform .18s,box-shadow .18s;
+  }
+  .card:hover{transform:translateY(-4px);box-shadow:0 14px 38px rgba(0,0,0,.5)}
+  .card-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .num{
+    flex:0 0 auto;width:38px;height:38px;border-radius:10px;
+    display:grid;place-items:center;font-weight:700;font-size:1.1rem;
+    background:linear-gradient(135deg,var(--accent),#8957e5);color:#fff;
+  }
+  .card-head .pid{font-size:.72rem;color:var(--muted);font-family:ui-monospace,monospace;word-break:break-all}
+  .dims{margin-top:14px;display:flex;flex-direction:column;gap:12px}
+  .dim{background:rgba(255,255,255,.02);border:1px solid var(--border);
+    border-left:3px solid var(--dc);border-radius:8px;padding:10px 12px}
+  .dim .label{font-size:.72rem;font-weight:700;text-transform:uppercase;
+    letter-spacing:.5px;color:var(--dc);margin-bottom:3px}
+  .dim .val{font-size:.88rem;color:var(--txt)}
+  footer{text-align:center;color:var(--muted);font-size:.8rem;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🎮 项目召回抽取结果</h1>
+    <p>projectrecallextract · 3 cases · 6 维度画像</p>
+    <div class="meta-bar" id="metaBar"></div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <footer>数据来源：d505fd97-projectrecallextract3cases.jsonl · 生成于 2026-07-01</footer>
+</div>
+
+<script>
+const DIM_DEFS = [
+  {key:"subject",     label:"题材 Subject",       color:"var(--c-subject)"},
+  {key:"gameplay",    label:"玩法 Gameplay",      color:"var(--c-gameplay)"},
+  {key:"artStyle",    label:"画风 Art Style",     color:"var(--c-art)"},
+  {key:"mood",        label:"氛围 Mood",          color:"var(--c-mood)"},
+  {key:"interaction", label:"交互 Interaction",   color:"var(--c-interaction)"},
+  {key:"social",      label:"社交 Social",        color:"var(--c-social)"},
+];
+
+// 抽取结果数据
+const DATA = [
+  {"projectId":"0000436e-8c4b-4267-bf81-dd9819b5d8c2","status":"ok","dimensions":{"subject":"题材：以诡异系统询问和环境感知为主体的恐怖心理题材","gameplay":"玩法：核心循环是回答一系列心理诱导问题并触发恐怖反馈","artStyle":"画风：极简风格，画面带有复古滤镜和故障艺术质感","mood":"氛围：整体偏恐怖，带来神秘且紧张的心理压力感受","interaction":"交互方式：主要通过点击选择，辅以系统剪贴板操作与设备振动","social":"社交结构：单机"}},
+  {"projectId":"00014872-ed2f-4452-9d88-fbc0ce0a4241","status":"ok","dimensions":{"subject":"题材：以暗黑地下空间或异世界为场景的平台跨越题材","gameplay":"玩法：核心循环是按压屏幕蓄力建造桥梁长度并跨越平台，属于益智闯关类玩法","artStyle":"画风：赛博朋克风格，画面呈现深色调与霓虹红色的强烈对比","mood":"氛围：整体偏黑暗神秘，带来紧张且略显压抑的感受","interaction":"交互方式：主要通过长按控制桥梁长度，辅以松开触发下落","social":"社交结构：单机（排行榜）"}},
+  {"projectId":"000197db-e51e-4060-a4da-4256cb4299bb","status":"ok","dimensions":{"subject":"题材：以多色霓虹微观生物群落为主题的培养皿生态模拟题材","gameplay":"玩法：核心循环是绘画放置不同属性细胞并观察其相互吞噬演化","artStyle":"画风：极简风格，画面以深黑色背景搭配高饱和度霓虹发光色块","mood":"氛围：整体偏治愈与解压，带来观察物种演化与平衡的奇妙感受","interaction":"交互方式：主要通过涂画与点击，辅以滑动切换工具和数值调节","social":"社交结构：单机"}}
+];
+
+// 去掉 "题材：" 之类前缀，展示更干净
+function stripPrefix(text){
+  const i = text.indexOf("：");
+  return i >= 0 ? text.slice(i+1) : text;
+}
+
+// 顶部统计条
+const okCount = DATA.filter(d=>d.status==="ok").length;
+document.getElementById("metaBar").innerHTML =
+  `<span class="chip"><b>${DATA.length}</b> 个项目</span>`+
+  `<span class="chip"><span class="dot"></span>成功 <b>${okCount}</b></span>`+
+  `<span class="chip"><b>6</b> 个抽取维度</span>`;
+
+// 渲染卡片
+const grid = document.getElementById("grid");
+DATA.forEach((item,idx)=>{
+  const dimsHtml = DIM_DEFS.map(def=>{
+    const raw = item.dimensions[def.key] || "—";
+    return `<div class="dim" style="--dc:${def.color}">
+      <div class="label">${def.label}</div>
+      <div class="val">${stripPrefix(raw)}</div>
+    </div>`;
+  }).join("");
+  grid.insertAdjacentHTML("beforeend", `
+    <div class="card">
+      <div class="card-head">
+        <div class="num">${idx+1}</div>
+        <div>
+          <div style="font-weight:600;font-size:.9rem">Case ${idx+1}</div>
+          <div class="pid">${item.projectId}</div>
+        </div>
+      </div>
+      <div class="dims">${dimsHtml}</div>
+    </div>
+  `);
+});
+</script>
+</body>
+</html>

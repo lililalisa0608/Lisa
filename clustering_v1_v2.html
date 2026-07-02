@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>一段话聚类 · v1 vs v2 对比</title>
+<style>
+  .viz-root{
+    --surface-1:#fcfcfb; --page:#f9f9f7;
+    --text-primary:#0b0b0b; --text-secondary:#52514e; --muted:#898781;
+    --grid:#e1e0d9; --baseline:#c3c2b7; --border:rgba(11,11,11,.10);
+    --v1:#2a78d6; --v2:#1baf7a;
+    --good:#006300; --warn:#eda100;
+  }
+  @media (prefers-color-scheme: dark){
+    .viz-root{
+      --surface-1:#1a1a19; --page:#0d0d0d;
+      --text-primary:#fff; --text-secondary:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,.10);
+      --v1:#3987e5; --v2:#199e70; --good:#0ca30c; --warn:#c98500;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI","PingFang SC",sans-serif;
+    background:var(--page);color:var(--text-primary);line-height:1.55;padding:36px 20px}
+  .viz-root{max-width:1120px;margin:0 auto}
+  h1{font-size:1.7rem}
+  .sub{color:var(--text-secondary);margin-top:6px;font-size:.95rem}
+  .vtag{display:inline-block;font-size:.72rem;font-weight:700;border-radius:6px;padding:1px 7px;color:#fff;vertical-align:middle}
+  .vtag.v1{background:var(--v1)} .vtag.v2{background:var(--v2)}
+  h2{font-size:1.12rem;margin:36px 0 4px;display:flex;align-items:center;gap:9px}
+  h2 .bar{width:4px;height:18px;border-radius:2px;background:var(--muted)}
+  .note{color:var(--muted);font-size:.83rem;margin-bottom:16px}
+  .panel{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;
+    padding:20px 22px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem;color:var(--text-secondary);margin:2px 0 12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block}
+  /* stat compare tiles */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:20px}
+  .stat{background:var(--surface-1);border:1px solid var(--border);border-radius:13px;padding:15px 17px}
+  .stat .l{font-size:.78rem;color:var(--muted)}
+  .stat .vals{display:flex;align-items:baseline;gap:10px;margin-top:8px}
+  .stat .n1{font-size:1.5rem;font-weight:700;color:var(--v1);font-variant-numeric:tabular-nums}
+  .stat .arrow{color:var(--muted);font-size:.9rem}
+  .stat .n2{font-size:1.5rem;font-weight:700;color:var(--v2);font-variant-numeric:tabular-nums}
+  .stat .delta{margin-top:6px;font-size:.75rem;font-variant-numeric:tabular-nums}
+  .up{color:var(--good)} .down{color:var(--warn)}
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .axis text{fill:var(--muted);font-size:11px}
+  .axis line{stroke:var(--grid)} .baseline{stroke:var(--baseline)}
+  .vlabel{fill:var(--text-secondary);font-size:9.5px;font-variant-numeric:tabular-nums}
+  .bar-rect{transition:opacity .12s} .bar-rect:hover{opacity:.72;cursor:pointer}
+  .tt{position:fixed;pointer-events:none;opacity:0;transition:opacity .1s;z-index:50;
+    background:var(--surface-1);border:1px solid var(--border);border-radius:8px;
+    padding:7px 10px;font-size:.78rem;box-shadow:0 8px 24px rgba(0,0,0,.22);max-width:240px}
+  .tt b{font-variant-numeric:tabular-nums}
+  /* agreement */
+  .agree{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:8px}
+  .metric{background:var(--surface-1);border:1px solid var(--border);border-radius:13px;padding:16px 18px}
+  .metric .big{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .metric .name{font-size:.85rem;font-weight:600;margin-top:2px}
+  .metric .desc{font-size:.76rem;color:var(--muted);margin-top:7px}
+  .meter{height:7px;border-radius:4px;background:var(--grid);margin-top:10px;overflow:hidden}
+  .meter>i{display:block;height:100%;border-radius:4px}
+  .callout{margin-top:20px;background:color-mix(in srgb,var(--warn) 12%,transparent);
+    border:1px solid color-mix(in srgb,var(--warn) 40%,transparent);border-radius:12px;padding:15px 18px;font-size:.9rem}
+  .callout b{color:var(--warn)}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:.87rem}
+  th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--grid);vertical-align:top}
+  th{font-size:.78rem;color:var(--muted);font-weight:600}
+  td.dim{color:var(--muted);font-weight:600;white-space:nowrap}
+  .c1{color:var(--v1);font-weight:600} .c2{color:var(--v2);font-weight:600}
+  td.tnum{font-variant-numeric:tabular-nums}
+  footer{color:var(--muted);font-size:.78rem;margin-top:34px;text-align:center}
+</style>
+</head>
+<body>
+<div class="viz-root" data-palette="#2a78d6,#1baf7a">
+  <h1>一段话聚类 · <span class="vtag v1">v1</span> vs <span class="vtag v2">v2</span> 对比</h1>
+  <p class="sub">同一批约 9,700 个项目、两版「一段话摘要向量聚类」结果对比 · v2 为更新版</p>
+
+  <div class="stats" id="stats"></div>
+
+  <h2><span class="bar"></span>簇大小分布：v1 vs v2</h2>
+  <div class="note">按簇成员数分桶 · v2 明显向更大簇偏移（小簇变少、10+ 大簇变多）</div>
+  <div class="panel">
+    <div class="legend">
+      <span><span class="sw" style="background:var(--v1)"></span>v1（1,414 簇）</span>
+      <span><span class="sw" style="background:var(--v2)"></span>v2（1,177 簇）</span>
+    </div>
+    <svg id="chartHist" viewBox="0 0 1040 300" role="img" aria-label="簇大小分布 v1 vs v2"></svg>
+  </div>
+
+  <h2><span class="bar"></span>两版聚类的一致性</h2>
+  <div class="note">在 9,701 个共有项目上衡量：两版把项目分组的结果有多接近</div>
+  <div class="agree" id="agree"></div>
+  <div class="callout" id="callout"></div>
+
+  <h2><span class="bar"></span>指标对照表</h2>
+  <div class="panel" style="padding:6px 22px 14px">
+    <table>
+      <thead><tr><th>指标</th><th><span class="c1">v1</span></th><th><span class="c2">v2</span></th><th>变化</th></tr></thead>
+      <tbody id="cmpTable"></tbody>
+    </table>
+  </div>
+
+  <footer>数据来源：v1 = f4a76dc4-summary.tsv · v2 = 0bc0001c-summary1.tsv · 一致性指标（ARI/NMI/邻居保持率）基于 9,701 个共有项目计算</footer>
+</div>
+<div class="tt" id="tt"></div>
+
+<script>
+const D = {"v1":{"clusters":1414,"projects":9703,"median":5.0,"mean":6.9,"max":60,"singletons":156,"hist":[{"b":"1","n":156},{"b":"2","n":160},{"b":"3","n":148},{"b":"4","n":143},{"b":"5","n":133},{"b":"6","n":96},{"b":"7","n":89},{"b":"8","n":80},{"b":"9","n":68},{"b":"10-14","n":219},{"b":"15-19","n":72},{"b":"20-29","n":37},{"b":"30-39","n":9},{"b":"40+","n":4}]},"v2":{"clusters":1177,"projects":9701,"median":7,"mean":8.2,"max":46,"singletons":111,"hist":[{"b":"1","n":111},{"b":"2","n":85},{"b":"3","n":76},{"b":"4","n":116},{"b":"5","n":106},{"b":"6","n":90},{"b":"7","n":77},{"b":"8","n":76},{"b":"9","n":55},{"b":"10-14","n":216},{"b":"15-19","n":90},{"b":"20-29","n":64},{"b":"30-39","n":11},{"b":"40+","n":4}]},"cmp":{"shared":9701,"v1only":2,"v2only":0,"ari":0.176,"nmi":0.775,"preserve12":0.185,"preserve21":0.157,"split_mean":4.12,"split_max":22,"split_stable":199,"split_total":1414}};
+const $=id=>document.getElementById(id);
+const tt=$("tt");
+function showTT(e,h){tt.innerHTML=h;tt.style.opacity=1;mv(e);}
+function mv(e){let x=e.clientX+14,y=e.clientY+14;if(x+250>innerWidth)x=e.clientX-250;tt.style.left=x+"px";tt.style.top=y+"px";}
+function hideTT(){tt.style.opacity=0;}
+addEventListener("scroll",hideTT,{passive:true});
+
+// ---------- stat compare tiles ----------
+(function(){
+  const rows=[
+    ["簇数量", D.v1.clusters, D.v2.clusters, false, "个"],
+    ["覆盖项目", D.v1.projects, D.v2.projects, false, ""],
+    ["簇中位大小", D.v1.median, D.v2.median, true, ""],
+    ["簇平均大小", D.v1.mean, D.v2.mean, true, ""],
+    ["最大簇", D.v1.max, D.v2.max, false, ""],
+    ["单例簇", D.v1.singletons, D.v2.singletons, false, "个"],
+  ];
+  $("stats").innerHTML=rows.map(r=>{
+    const [l,a,b,biggerUp,unit]=r;
+    const d=b-a, pct=a?Math.round(d/a*1000)/10:0;
+    const good = biggerUp ? d>0 : d<0;  // for size↑ good; for count/singleton ↓ good (更聚合/更少碎片)
+    const cls = d===0?"":(good?"up":"down");
+    const sign=d>0?"+":"";
+    return `<div class="stat">
+      <div class="l">${l}</div>
+      <div class="vals"><span class="n1">${a.toLocaleString()}</span><span class="arrow">→</span><span class="n2">${b.toLocaleString()}</span></div>
+      <div class="delta ${cls}">${d===0?"持平":`${sign}${d.toLocaleString()}${unit?"":""}（${sign}${pct}%）`}</div>
+    </div>`;
+  }).join("");
+})();
+
+// ---------- histogram overlay (grouped bars) ----------
+(function(){
+  const h1=D.v1.hist, h2=D.v2.hist;
+  const W=1040,H=300,mL=44,mR=14,mT=14,mB=48;
+  const iw=W-mL-mR, ih=H-mT-mB, gw=iw/h1.length;
+  const max=Math.max(...h1.map(x=>x.n),...h2.map(x=>x.n));
+  let s=`<g class="axis">`;
+  for(let i=0;i<=5;i++){const v=Math.round(max/5*i),y=mT+ih-ih*(v/max);
+    s+=`<line x1="${mL}" y1="${y}" x2="${W-mR}" y2="${y}"/><text x="${mL-6}" y="${y+3}" text-anchor="end">${v}</text>`;}
+  s+=`</g><line class="baseline" x1="${mL}" y1="${mT+ih}" x2="${W-mR}" y2="${mT+ih}"/>`;
+  h1.forEach((x,i)=>{
+    const cx=mL+i*gw+gw/2, bw=Math.min(26,gw*0.32), gap=3;
+    [["v1",x.n,"var(--v1)"],["v2",h2[i].n,"var(--v2)"]].forEach((b,j)=>{
+      const bh=ih*(b[1]/max), bx=cx-bw-gap/2+j*(bw+gap), by=mT+ih-bh;
+      s+=`<rect class="bar-rect" x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="3" fill="${b[2]}"
+          data-b="${x.b}" data-v="${b[0]}" data-n="${b[1]}"/>`;
+    });
+    s+=`<text class="axis" x="${cx}" y="${mT+ih+15}" text-anchor="middle" style="font-size:10px">${x.b}</text>`;
+  });
+  s+=`<text class="axis" x="${mL+iw/2}" y="${H-6}" text-anchor="middle">簇成员数（项目个数）</text>`;
+  const svg=$("chartHist"); svg.innerHTML=s;
+  svg.querySelectorAll(".bar-rect").forEach(r=>{
+    r.onmousemove=e=>showTT(e,`成员数 <b>${r.dataset.b}</b> · <b>${r.dataset.v}</b><br>簇数量 <b>${r.dataset.n}</b>`);
+    r.onmouseleave=hideTT;
+  });
+})();
+
+// ---------- agreement metrics ----------
+(function(){
+  const c=D.cmp;
+  const cards=[
+    {big:c.nmi.toFixed(3), name:"NMI 归一化互信息", pct:c.nmi*100, color:"var(--v2)",
+     desc:"两版共享的结构信息量。0.78 偏高——大方向（哪些项目大致成一类）基本延续。"},
+    {big:c.ari.toFixed(3), name:"ARI 调整兰德指数", pct:c.ari*100, color:"var(--warn)",
+     desc:"成对同簇关系的一致性。0.18 偏低——具体谁和谁分到一起，两版差异很大。"},
+    {big:(c.preserve12*100).toFixed(0)+"%", name:"邻居保持率 v1→v2", pct:c.preserve12*100, color:"var(--warn)",
+     desc:"v1 里的同簇伙伴，平均只有约 1/5 在 v2 仍同簇。成员重组明显。"},
+    {big:c.split_stable+"/"+c.split_total, name:"保持完整的 v1 簇", pct:c.split_stable/c.split_total*100, color:"var(--warn)",
+     desc:`仅 ${c.split_stable} 个 v1 簇整体进入同一个 v2 簇；其余被打散，平均落入 ${c.split_mean} 个 v2 簇。`},
+  ];
+  $("agree").innerHTML=cards.map(m=>`
+    <div class="metric">
+      <div class="big" style="color:${m.color}">${m.big}</div>
+      <div class="name">${m.name}</div>
+      <div class="meter"><i style="width:${Math.max(3,Math.min(100,m.pct)).toFixed(0)}%;background:${m.color}"></i></div>
+      <div class="desc">${m.desc}</div>
+    </div>`).join("");
+  $("callout").innerHTML=`<b>结论：</b>v2 相比 v1 <b>簇更少更大</b>（1,414→1,177，中位 5→7），碎片单例减少（156→111）；覆盖的项目几乎不变。但一致性指标显示 v2 <b>并非简单合并 v1 的簇，而是做了实质性重新分组</b>——NMI 高（大结构延续）而 ARI/邻居保持率低（成对归属大改），大多数 v1 簇被拆散重排。若 v2 是有意调参/换模型，这个幅度说明聚类边界变化较大，建议抽样核验若干簇的语义是否更合理。`;
+})();
+
+// ---------- comparison table ----------
+(function(){
+  const c=D.cmp;
+  const rows=[
+    ["簇数量", D.v1.clusters, D.v2.clusters, `${D.v2.clusters-D.v1.clusters}`],
+    ["覆盖项目", D.v1.projects, D.v2.projects, `${D.v2.projects-D.v1.projects}`],
+    ["簇中位大小", D.v1.median, D.v2.median, `+${D.v2.median-D.v1.median}`],
+    ["簇平均大小", D.v1.mean, D.v2.mean, `+${(D.v2.mean-D.v1.mean).toFixed(1)}`],
+    ["最大簇", D.v1.max, D.v2.max, `${D.v2.max-D.v1.max}`],
+    ["单例簇", D.v1.singletons, D.v2.singletons, `${D.v2.singletons-D.v1.singletons}`],
+    ["共有项目", `${c.shared}`, `${c.shared}`, "—"],
+    ["独有项目", `${c.v1only}`, `${c.v2only}`, "—"],
+    ["NMI（结构一致）", "—", "—", c.nmi],
+    ["ARI（成对一致）", "—", "—", c.ari],
+    ["邻居保持率", "v1→v2", `${(c.preserve12*100).toFixed(0)}%`, `v2→v1 ${(c.preserve21*100).toFixed(0)}%`],
+  ];
+  $("cmpTable").innerHTML=rows.map(r=>
+    `<tr><td class="dim">${r[0]}</td><td class="tnum c1">${r[1]}</td><td class="tnum c2">${r[2]}</td><td class="tnum">${r[3]}</td></tr>`).join("");
+})();
+</script>
+</body>
+</html>

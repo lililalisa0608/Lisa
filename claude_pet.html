@@ -1,0 +1,425 @@
+<title>Claude 桌宠</title>
+<style>
+  :root{
+    --bg-top:#FDF2E4; --bg-bottom:#F4D8B9; --desk:#E7BC90; --desk-edge:#D9A66E;
+    --glow: rgba(255,214,158,.85); --glow2: rgba(255,180,120,0);
+    --ink:#3C281C; --muted:#977158; --line:rgba(60,40,28,.14);
+    --accent:#C15F3C; --accent-soft:#E7906A;
+    --panel:rgba(255,251,244,.72); --panel-brd:rgba(193,95,60,.22);
+    --body1:#E58A5C; --body2:#C25E3B; --belly:#F6D4B6; --cheek:#F19E8B;
+    --eye:#3B2418; --burst:#B84A28; --shadow:rgba(120,60,30,.22);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg-top:#221B33; --bg-bottom:#13101E; --desk:#2C2440; --desk-edge:#3A2F52;
+      --glow: rgba(255,176,110,.55); --glow2: rgba(255,150,90,0);
+      --ink:#F3E7D8; --muted:#B79A83; --line:rgba(255,235,215,.12);
+      --accent:#F0A277; --accent-soft:#E88E5E;
+      --panel:rgba(42,33,58,.62); --panel-brd:rgba(240,162,119,.24);
+      --body1:#E88C5C; --body2:#BE5A38; --belly:#F0C9A6; --cheek:#E88C79;
+      --eye:#2A1810; --burst:#F0B48A; --shadow:rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg-top:#FDF2E4; --bg-bottom:#F4D8B9; --desk:#E7BC90; --desk-edge:#D9A66E;
+    --glow: rgba(255,214,158,.85); --glow2: rgba(255,180,120,0);
+    --ink:#3C281C; --muted:#977158; --line:rgba(60,40,28,.14);
+    --accent:#C15F3C; --accent-soft:#E7906A;
+    --panel:rgba(255,251,244,.72); --panel-brd:rgba(193,95,60,.22);
+    --body1:#E58A5C; --body2:#C25E3B; --belly:#F6D4B6; --cheek:#F19E8B;
+    --eye:#3B2418; --burst:#B84A28; --shadow:rgba(120,60,30,.22);
+  }
+  :root[data-theme="dark"]{
+    --bg-top:#221B33; --bg-bottom:#13101E; --desk:#2C2440; --desk-edge:#3A2F52;
+    --glow: rgba(255,176,110,.55); --glow2: rgba(255,150,90,0);
+    --ink:#F3E7D8; --muted:#B79A83; --line:rgba(255,235,215,.12);
+    --accent:#F0A277; --accent-soft:#E88E5E;
+    --panel:rgba(42,33,58,.62); --panel-brd:rgba(240,162,119,.24);
+    --body1:#E88C5C; --body2:#BE5A38; --belly:#F0C9A6; --cheek:#E88C79;
+    --eye:#2A1810; --burst:#F0B48A; --shadow:rgba(0,0,0,.45);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; overflow:hidden;
+    font-family:ui-rounded,"SF Pro Rounded","PingFang SC","Hiragino Sans GB",
+      "Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(120% 90% at 50% 92%, var(--glow) 0%, var(--glow2) 55%),
+      linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    -webkit-user-select:none; user-select:none;
+  }
+  /* desk surface */
+  .desk{
+    position:fixed; left:0; right:0; bottom:0; height:26vh; z-index:0;
+    background:linear-gradient(180deg, var(--desk-edge), var(--desk));
+    border-top:2px solid var(--desk-edge);
+    box-shadow:0 -18px 60px -20px var(--shadow);
+  }
+  .desk::before{ /* light pool on desk */
+    content:""; position:absolute; inset:0;
+    background:radial-gradient(60% 120% at 50% 0%, var(--glow) 0%, transparent 70%);
+    opacity:.7;
+  }
+
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:5;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 22px; pointer-events:none;
+  }
+  .title{display:flex; align-items:baseline; gap:10px; pointer-events:none}
+  .title b{font-size:19px; letter-spacing:.3px}
+  .title span{font-size:12.5px; color:var(--muted)}
+  .theme-btn{
+    pointer-events:auto; cursor:pointer; border:1px solid var(--panel-brd);
+    background:var(--panel); color:var(--ink); backdrop-filter:blur(8px);
+    border-radius:999px; padding:8px 14px; font:inherit; font-size:13px;
+    display:inline-flex; align-items:center; gap:7px; transition:transform .15s;
+  }
+  .theme-btn:hover{transform:translateY(-1px)}
+  .theme-btn:active{transform:translatey(0) scale(.97)}
+
+  /* the pet */
+  #stage{position:fixed; inset:0; z-index:2}
+  #pet{
+    position:absolute; left:50%; top:52%; width:236px;
+    transform:translate(-50%,-50%);
+    cursor:grab; touch-action:none; filter:drop-shadow(0 22px 26px var(--shadow));
+    animation:bob 4.2s ease-in-out infinite;
+  }
+  #pet.grabbing{cursor:grabbing; animation:none}
+  #pet.sleeping{animation:snore 5s ease-in-out infinite}
+  @keyframes bob{0%,100%{translate:0 0}50%{translate:0 -12px}}
+  @keyframes snore{0%,100%{translate:0 0}50%{translate:0 -4px}}
+  #pet svg{display:block; width:100%; height:auto; overflow:visible}
+
+  #petBody{transform-box:fill-box; transform-origin:50% 92%; transition:transform .18s}
+  #pet.happy #petBody{animation:squish .5s ease}
+  @keyframes squish{
+    0%{transform:scale(1,1)} 30%{transform:scale(1.09,.9)}
+    60%{transform:scale(.95,1.06)} 100%{transform:scale(1,1)}
+  }
+  #pet.spin{animation:spin .8s cubic-bezier(.5,0,.3,1)}
+  @keyframes spin{to{rotate:360deg}}
+
+  .eyeGrp{transform-box:fill-box; transform-origin:center; transition:transform .09s}
+  .eyeGrp.blink{transform:scaleY(.08)}
+
+  /* speech bubble */
+  #bubble{
+    position:absolute; z-index:4; max-width:230px;
+    background:var(--panel); color:var(--ink);
+    border:1px solid var(--panel-brd); backdrop-filter:blur(10px);
+    padding:11px 15px; border-radius:16px; font-size:14.5px; line-height:1.5;
+    box-shadow:0 12px 30px -12px var(--shadow);
+    transform:translate(-50%,-100%) scale(.7); transform-origin:50% 120%;
+    opacity:0; pointer-events:none; transition:opacity .22s, transform .22s;
+    text-wrap:balance;
+  }
+  #bubble.show{opacity:1; transform:translate(-50%,-100%) scale(1)}
+  #bubble::after{
+    content:""; position:absolute; left:50%; bottom:-8px; width:16px; height:16px;
+    background:var(--panel); border-right:1px solid var(--panel-brd);
+    border-bottom:1px solid var(--panel-brd);
+    transform:translateX(-50%) rotate(45deg);
+  }
+
+  /* dock */
+  .dock{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:6;
+    display:flex; align-items:center; gap:10px;
+    background:var(--panel); border:1px solid var(--panel-brd);
+    backdrop-filter:blur(12px); padding:10px 12px; border-radius:20px;
+    box-shadow:0 16px 40px -18px var(--shadow);
+  }
+  .dock button{
+    cursor:pointer; border:0; background:transparent; color:var(--ink); font:inherit;
+    font-size:13.5px; padding:9px 13px; border-radius:13px;
+    display:inline-flex; align-items:center; gap:7px; transition:background .15s,transform .12s;
+  }
+  .dock button:hover{background:rgba(193,95,60,.12)}
+  .dock button:active{transform:scale(.94)}
+  .dock button .em{font-size:17px; line-height:1}
+  .sep{width:1px; align-self:stretch; background:var(--line); margin:2px 2px}
+
+  .energy{display:flex; align-items:center; gap:9px; padding:0 8px 0 4px}
+  .energy small{font-size:11.5px; color:var(--muted); white-space:nowrap}
+  .bar{width:96px; height:8px; border-radius:99px; background:var(--line); overflow:hidden}
+  .bar > i{
+    display:block; height:100%; width:80%; border-radius:99px;
+    background:linear-gradient(90deg,var(--accent-soft),var(--accent));
+    transition:width .4s ease;
+  }
+
+  .hint{
+    position:fixed; left:50%; bottom:88px; transform:translateX(-50%); z-index:6;
+    font-size:12px; color:var(--muted); opacity:.9; transition:opacity .5s;
+    display:flex; align-items:center; gap:6px; pointer-events:none;
+  }
+  .hint.gone{opacity:0}
+
+  @media (prefers-reduced-motion:reduce){
+    #pet,#pet.happy #petBody,#pet.spin{animation:none!important}
+    *{transition-duration:.001ms!important}
+  }
+</style>
+
+<div class="desk"></div>
+
+<header>
+  <div class="title"><b>Claude 桌宠</b><span>你的桌面小伙伴</span></div>
+  <button class="theme-btn" id="themeBtn" aria-label="切换白天/夜晚">🌙 <span id="themeLbl">夜晚</span></button>
+</header>
+
+<div id="stage">
+  <div id="bubble"></div>
+  <div id="pet" role="button" aria-label="Claude 桌宠，点一下和它互动">
+    <svg viewBox="0 0 240 300" aria-hidden="true">
+      <!-- ground shadow -->
+      <ellipse cx="120" cy="272" rx="74" ry="13" fill="var(--shadow)"/>
+      <g id="petBody">
+        <!-- feet -->
+        <ellipse cx="92"  cy="252" rx="21" ry="15" fill="var(--body2)"/>
+        <ellipse cx="148" cy="252" rx="21" ry="15" fill="var(--body2)"/>
+        <!-- body -->
+        <defs>
+          <radialGradient id="bodyG" cx="42%" cy="34%" r="75%">
+            <stop offset="0%"  stop-color="var(--body1)"/>
+            <stop offset="100%" stop-color="var(--body2)"/>
+          </radialGradient>
+        </defs>
+        <ellipse cx="120" cy="160" rx="98" ry="102" fill="url(#bodyG)"/>
+        <!-- belly -->
+        <ellipse cx="120" cy="188" rx="58" ry="60" fill="var(--belly)" opacity=".85"/>
+        <!-- claude spark emblem -->
+        <g id="burst" transform="translate(120,86)"></g>
+        <!-- cheeks -->
+        <ellipse cx="72"  cy="176" rx="15" ry="10" fill="var(--cheek)" opacity=".8"/>
+        <ellipse cx="168" cy="176" rx="15" ry="10" fill="var(--cheek)" opacity=".8"/>
+        <!-- eyes -->
+        <g class="eyeGrp" id="eyeL">
+          <ellipse cx="92"  cy="156" rx="15" ry="19" fill="#fff"/>
+          <circle  class="pupil" data-bx="94"  data-by="158" cx="94"  cy="158" r="8.5" fill="var(--eye)"/>
+          <circle cx="90" cy="153" r="3" fill="#fff"/>
+        </g>
+        <g class="eyeGrp" id="eyeR">
+          <ellipse cx="148" cy="156" rx="15" ry="19" fill="#fff"/>
+          <circle  class="pupil" data-bx="150" data-by="158" cx="150" cy="158" r="8.5" fill="var(--eye)"/>
+          <circle cx="146" cy="153" r="3" fill="#fff"/>
+        </g>
+        <!-- mouth -->
+        <path id="mouth" d="M104,192 Q120,208 136,192" fill="none"
+              stroke="var(--eye)" stroke-width="4.5" stroke-linecap="round"/>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<div class="hint" id="hint">✨ 拖动我，或者点点我 · 摸摸头我会更开心</div>
+
+<div class="dock">
+  <button id="petBtn"><span class="em">🤚</span>摸摸头</button>
+  <button id="feedBtn"><span class="em">🍪</span>投喂</button>
+  <button id="sleepBtn"><span class="em">😴</span><span id="sleepLbl">睡觉</span></button>
+  <div class="sep"></div>
+  <div class="energy">
+    <small>元气</small>
+    <div class="bar"><i id="energyBar"></i></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var pet=document.getElementById('pet');
+  var svg=pet.querySelector('svg');
+  var bubble=document.getElementById('bubble');
+  var stage=document.getElementById('stage');
+  var pupils=[].slice.call(document.querySelectorAll('.pupil'));
+  var eyes=[document.getElementById('eyeL'),document.getElementById('eyeR')];
+  var mouth=document.getElementById('mouth');
+  var energyBar=document.getElementById('energyBar');
+  var hint=document.getElementById('hint');
+  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  /* ---- build the Claude spark emblem ---- */
+  (function(){
+    var g=document.getElementById('burst'), N=11;
+    for(var i=0;i<N;i++){
+      var a=(i/N)*Math.PI*2 - Math.PI/2;
+      var len=(i%2===0)?26:16;
+      var x=Math.cos(a)*len, y=Math.sin(a)*len;
+      var l=document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',0); l.setAttribute('y1',0);
+      l.setAttribute('x2',x.toFixed(1)); l.setAttribute('y2',y.toFixed(1));
+      l.setAttribute('stroke','var(--burst)');
+      l.setAttribute('stroke-width',(i%2===0)?5.5:4);
+      l.setAttribute('stroke-linecap','round');
+      g.appendChild(l);
+    }
+  })();
+
+  /* ---- state ---- */
+  var energy=82, sleeping=false, mood=1;
+  function setEnergy(v){ energy=Math.max(0,Math.min(100,v)); energyBar.style.width=energy+'%'; refreshFace(); }
+  function refreshFace(){
+    if(sleeping){ mouth.setAttribute('d','M108,194 Q120,200 132,194'); return; }
+    if(energy<25){ mouth.setAttribute('d','M104,198 Q120,190 136,198'); }   // tired frown
+    else if(mood>1){ mouth.setAttribute('d','M100,188 Q120,214 140,188'); } // big smile
+    else{ mouth.setAttribute('d','M104,192 Q120,208 136,192'); }
+  }
+  setEnergy(energy);
+
+  /* ---- speech ---- */
+  var lines=[
+    "在的在的，需要我帮忙吗？","要不要一起写点代码？","嘿嘿，被你发现啦～",
+    "今天也要元气满满！","我在认真思考中……🤔","叮！灵感出现啦 💡",
+    "累了就靠着我歇一会儿吧。","摸摸头会让我更聪明哦～","有你在真好呀 🧡"
+  ];
+  var bubT;
+  function say(text, ms){
+    clearTimeout(bubT);
+    bubble.textContent=text;
+    var r=pet.getBoundingClientRect();
+    bubble.style.left=(r.left+r.width/2)+'px';
+    bubble.style.top =(r.top-14)+'px';
+    bubble.classList.add('show');
+    bubT=setTimeout(function(){bubble.classList.remove('show');}, ms||2600);
+  }
+  function moveBubble(){
+    if(!bubble.classList.contains('show'))return;
+    var r=pet.getBoundingClientRect();
+    bubble.style.left=(r.left+r.width/2)+'px';
+    bubble.style.top =(r.top-14)+'px';
+  }
+
+  /* ---- eye tracking ---- */
+  var cursor={x:innerWidth/2,y:innerHeight/3};
+  addEventListener('pointermove',function(e){cursor.x=e.clientX;cursor.y=e.clientY;});
+  function trackEyes(){
+    if(!sleeping){
+      var r=pet.getBoundingClientRect();
+      var cx=r.left+r.width/2, cy=r.top+r.height*0.5;
+      var ang=Math.atan2(cursor.y-cy,cursor.x-cx);
+      var d=Math.min(4.5,Math.hypot(cursor.x-cx,cursor.y-cy)/40);
+      var dx=Math.cos(ang)*d, dy=Math.sin(ang)*d;
+      pupils.forEach(function(p){
+        p.setAttribute('cx',(+p.dataset.bx+dx).toFixed(1));
+        p.setAttribute('cy',(+p.dataset.by+dy).toFixed(1));
+      });
+    }
+    requestAnimationFrame(trackEyes);
+  }
+  requestAnimationFrame(trackEyes);
+
+  /* ---- blink ---- */
+  function blink(){
+    if(!sleeping){
+      eyes.forEach(function(e){e.classList.add('blink');});
+      setTimeout(function(){eyes.forEach(function(e){e.classList.remove('blink');});},130);
+    }
+    setTimeout(blink, 2200+Math.floor(Math.abs(Math.sin(performance.now()))*2600));
+  }
+  setTimeout(blink,1600);
+
+  /* ---- interactions ---- */
+  function happy(){
+    pet.classList.remove('happy'); void pet.offsetWidth; pet.classList.add('happy');
+  }
+  function petHead(){
+    if(sleeping){wake();return;}
+    mood=2; happy(); setEnergy(energy+4);
+    say(pick(["好舒服～再摸一下嘛 🥰","嘿嘿，最喜欢你了！","头顶的火花更亮啦 ✨"]));
+    clearTimeout(petHead._t); petHead._t=setTimeout(function(){mood=1;refreshFace();},1800);
+  }
+  function feed(){
+    if(sleeping){wake();return;}
+    happy(); setEnergy(energy+16);
+    say("谢谢投喂！元气 +16 ⚡");
+  }
+  function toggleSleep(){ sleeping?wake():sleep(); }
+  function sleep(){
+    sleeping=true; pet.classList.add('sleeping');
+    eyes.forEach(function(e){e.classList.add('blink');});
+    document.getElementById('sleepLbl').textContent='唤醒';
+    document.getElementById('sleepBtn').querySelector('.em').textContent='☀️';
+    refreshFace(); say("Zzz... 做个好梦 🌙", 3200);
+  }
+  function wake(){
+    sleeping=false; pet.classList.remove('sleeping');
+    eyes.forEach(function(e){e.classList.remove('blink');});
+    document.getElementById('sleepLbl').textContent='睡觉';
+    document.getElementById('sleepBtn').querySelector('.em').textContent='😴';
+    refreshFace(); happy(); say("早安！我睡饱啦 ☀️");
+  }
+  function pick(a){ return a[Math.floor(Math.abs(Math.sin(performance.now()*13.7))*a.length)%a.length]; }
+
+  document.getElementById('petBtn').onclick=petHead;
+  document.getElementById('feedBtn').onclick=feed;
+  document.getElementById('sleepBtn').onclick=toggleSleep;
+
+  /* ---- drag ---- */
+  var drag=null;
+  pet.addEventListener('pointerdown',function(e){
+    drag={dx:e.clientX-pet.offsetLeft, dy:e.clientY-pet.offsetTop, moved:false, id:e.pointerId};
+    pet.setPointerCapture(e.pointerId);
+    pet.classList.add('grabbing');
+    pet.style.transform='none';
+  });
+  pet.addEventListener('pointermove',function(e){
+    if(!drag)return;
+    var nx=e.clientX-drag.dx, ny=e.clientY-drag.dy;
+    if(Math.abs(e.clientX-(drag.dx+pet.offsetLeft))>3) drag.moved=true;
+    nx=Math.max(-20,Math.min(innerWidth-pet.offsetWidth+20,nx));
+    ny=Math.max(50,Math.min(innerHeight-140,ny));
+    pet.style.left=nx+'px'; pet.style.top=ny+'px';
+    moveBubble();
+  });
+  pet.addEventListener('pointerup',function(e){
+    if(!drag)return;
+    pet.classList.remove('grabbing');
+    if(!drag.moved){ // treat as tap
+      if(sleeping) wake();
+      else { happy(); say(pick(lines)); if(energy<50)setEnergy(energy+2); }
+    } else { say(pick(["嗖～换个位置！","这里视野不错 👀","跟着你走啦～"]),1600); }
+    drag=null;
+    if(hint) hint.classList.add('gone');
+  });
+  pet.addEventListener('dblclick',function(){
+    if(sleeping)return;
+    pet.classList.remove('spin'); void pet.offsetWidth; pet.classList.add('spin');
+    say("转个圈圈～ 🌀",1500);
+  });
+
+  /* hide hint after a while */
+  setTimeout(function(){hint&&hint.classList.add('gone');},7000);
+
+  /* keep bubble anchored on resize */
+  addEventListener('resize',moveBubble);
+
+  /* energy drains slowly; restores while sleeping */
+  setInterval(function(){
+    if(sleeping) setEnergy(energy+2);
+    else setEnergy(energy-1);
+    if(!sleeping && energy<=18) say("有点困了…摸摸我或者投喂一下嘛 🥺",2400);
+  }, reduce?9000:6000);
+
+  /* ---- theme toggle ---- */
+  var themeBtn=document.getElementById('themeBtn'), themeLbl=document.getElementById('themeLbl');
+  function sysDark(){return matchMedia('(prefers-color-scheme:dark)').matches;}
+  var theme=sysDark()?'dark':'light';
+  function applyTheme(){
+    document.documentElement.setAttribute('data-theme',theme);
+    var dark=theme==='dark';
+    themeBtn.firstChild.textContent=dark?'☀️ ':'🌙 ';
+    themeLbl.textContent=dark?'白天':'夜晚';
+  }
+  applyTheme();
+  themeBtn.onclick=function(){ theme=(theme==='dark')?'light':'dark'; applyTheme(); };
+
+  /* greeting */
+  setTimeout(function(){ say("你好呀！我是 Claude，点我或拖我玩吧 🧡", 3400); }, 700);
+})();
+</script>

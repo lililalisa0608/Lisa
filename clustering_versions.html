@@ -83,10 +83,10 @@
   .rootband .t{font-size:.8rem;font-weight:600;color:var(--good);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
   .rootband .pids{margin-top:7px;display:flex;flex-direction:column;gap:2px}
   .rootband .pids .pid{font-family:ui-monospace,monospace;font-size:.75rem}
-  .resbody{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:1px solid var(--grid);margin-top:12px}
-  @media(max-width:1000px){.resbody{grid-template-columns:repeat(3,1fr)}}
-  @media(max-width:640px){.resbody{grid-template-columns:1fr}}
-  .rcol{padding:11px 12px;border-right:1px solid var(--grid);border-bottom:1px solid var(--grid)}
+  .resbody{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(292px,1fr);gap:0;
+    border-top:1px solid var(--grid);margin-top:12px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity}
+  .rcol{padding:11px 12px;border-right:1px solid var(--grid);border-bottom:1px solid var(--grid);scroll-snap-align:start}
+  .rcol:last-child{border-right:none}
   .rcolhead{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:9px}
   .rcolhead .t{font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:6px}
   .rcolhead .t .d{width:9px;height:9px;border-radius:50%;display:inline-block}
@@ -138,7 +138,7 @@
   <div class="callout" id="callout"></div>
 
   <h2><span class="bar"></span>按项目查 PID：五版同簇成员 + 一致根源邻居</h2>
-  <div class="note">输入任意项目 PID（可只输前几位）· 每列是它在该版本所在簇的完整成员 · 成员右侧数字=它与该项目在几个版本里同簇（<span class="cc cc5">5</span> 最高）· <b style="color:var(--good)">绿框</b>=五版都同簇的「一致根源邻居」，可单独复制</div>
+  <div class="note">输入任意项目 PID（可只输前几位）· 每列是它在该版本所在簇的完整成员 · 成员右侧数字=它与该项目在几个版本里同簇（<span class="cc cc5">5</span> 最高）· <b style="color:var(--good)">绿框</b>=五版都同簇的「一致根源邻居」，可单独复制 · <b>列区可左右滑动查看 v5</b></div>
   <div class="toolbar">
     <input class="search" id="pidSearch" placeholder="粘贴或输入 project id（如 000197db…）">
     <button class="btn" id="pidGo">查找</button>

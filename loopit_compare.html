@@ -177,6 +177,7 @@ details.mapping ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:
       <span class="note" style="margin:0" id="scopeNote"></span>
     </div>
     <p class="hint" style="margin:8px 0 0">两个口径叠加决定②③④区人群：先选去重前/后，再选来源。切换即联动。</p>
+    <div id="vennBox" class="hint" style="margin-top:6px"></div>
   </div>
 
   <!-- Section 2: playtype -->
@@ -316,6 +317,12 @@ function renderStats(){
   document.getElementById("mPgc").textContent=DATA.pipe_raw.pgc+" → "+DATA.pipe_clus.pgc;
   document.getElementById("statrow").innerHTML=[[DSLABEL[ds]+" 总数",P.total],["高热",P.hot],["PGC",P.pgc],["评论区",P.com]]
     .map(([l,n])=>`<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join("");
+  renderVenn();
+}
+function renderVenn(){
+  const a=DATA[ds],c={H:0,P:0,C:0,HP:0,HC:0,PC:0,HPC:0};
+  for(const r of a){const k=(r.ph?"H":"")+(r.pp?"P":"")+(r.pc?"C":"");if(k in c)c[k]++;}
+  document.getElementById("vennBox").innerHTML=`来源重叠（${DSLABEL[ds]} 三口径可重叠）：仅高热 <b>${c.H}</b> · 仅PGC <b>${c.P}</b> · 仅评论区 <b>${c.C}</b> · 高热∩PGC <b>${c.HP}</b> · 高热∩评论区 <b>${c.HC}</b> · PGC∩评论区 <b>${c.PC}</b> · 三者 <b>${c.HPC}</b>`;
 }
 // comparison table (raw vs clus)
 function l0pct(arr,l0){return 100*arr.filter(r=>r.l0===l0).length/arr.length;}

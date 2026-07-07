@@ -133,7 +133,7 @@ details.mapping ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:
           <li>按置信度三层（①⊂②⊂③）：① 强夸且指向内容 237 · ② 强夸 515 · ③ 任意正向 5252</li>
           <li>每条带 project/user/点赞/回复，可按 project 聚合看"哪条被夸最多"</li>
         </ol>
-        <div class="res">本表含 <b id="mCom"></b> 个评论区 project（带热评数/热评总赞，无曝光指标）</div>
+        <div class="res">本表含 <b id="mCom"></b> 个评论区 project（无曝光指标）</div>
       </div>
       <div class="method">
         <h4><span class="pill p-hot">高热</span> Top1万 → 3000</h4>
@@ -196,8 +196,8 @@ details.mapping ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:
 
   <!-- Section 4: metrics -->
   <div class="card">
-    <h2>④ 指标：曝光 / 互动 / 热评 / 发布时间</h2>
-    <p class="hint">曝光VV 偏态大，聚合默认中位数。互动率单位 %。<b>评论区</b>-only 内容无曝光指标、仅有热评数/热评总赞；<b>高热/PGC</b> 无热评。</p>
+    <h2>④ 指标：曝光 / 互动 / 发布时间</h2>
+    <p class="hint">曝光VV 偏态大，聚合默认中位数。互动率单位 %。<b>评论区</b>-only 内容无曝光指标（这些行指标显示为「—」）。</p>
     <div class="statrow" id="metricTiles"></div>
     <div style="display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin:8px 0 16px">
       <span style="font-size:12px;color:var(--ink2)">指标</span>
@@ -206,8 +206,6 @@ details.mapping ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:
         <button data-m="lr">点赞率</button>
         <button data-m="cr">收藏率</button>
         <button data-m="wr">view10率</button>
-        <button data-m="hc">热评数</button>
-        <button data-m="hl">热评总赞</button>
       </div>
       <span style="font-size:12px;color:var(--ink2)">按维度</span>
       <select id="dimSel" class="btn"></select>
@@ -248,7 +246,7 @@ details.mapping ul{margin:8px 0 0;padding-left:18px;color:var(--ink2);font-size:
     <textarea id="idText" readonly></textarea>
     <div class="scrolly" style="max-height:520px;margin-top:6px;overflow:auto">
       <table><thead><tr><th>#</th><th>projectid</th><th>来源</th><th>内容标题</th><th>等级</th><th>L0</th><th>L1</th><th>L2</th><th>L3</th><th>题材</th>
-        <th class="sortable" data-sort="vv">曝光VV</th><th class="sortable" data-sort="lr">点赞率</th><th class="sortable" data-sort="cr">收藏率</th><th class="sortable" data-sort="wr">view10率</th><th class="sortable" data-sort="hl">热评赞</th><th class="sortable" data-sort="pt">发布</th></tr></thead>
+        <th class="sortable" data-sort="vv">曝光VV</th><th class="sortable" data-sort="lr">点赞率</th><th class="sortable" data-sort="cr">收藏率</th><th class="sortable" data-sort="wr">view10率</th><th class="sortable" data-sort="pt">发布</th></tr></thead>
       <tbody id="resTbody"></tbody></table>
     </div>
     <div class="note" id="tableNote"></div>
@@ -274,7 +272,7 @@ const DIMS=[
  {key:"l0",name:"Playtype L0"},{key:"l1",name:"Playtype L1"},{key:"l2",name:"Playtype L2"},{key:"l3",name:"Playtype L3"},
  {key:"t",name:"题材 Theme"},{key:"a",name:"画风 Art"},{key:"n",name:"交互 Interaction"},{key:"v",name:"氛围 Vibe"},{key:"s",name:"社交 Social"},{key:"gr",name:"等级 Grade"},
 ];
-const METRICS={vv:{name:"曝光VV",pct:false},lr:{name:"点赞率",pct:true},cr:{name:"收藏率",pct:true},wr:{name:"view10率",pct:true},hc:{name:"热评数",pct:false},hl:{name:"热评总赞",pct:false}};
+const METRICS={vv:{name:"曝光VV",pct:false},lr:{name:"点赞率",pct:true},cr:{name:"收藏率",pct:true},wr:{name:"view10率",pct:true}};
 const DIMSX=DIMS.concat([{key:"pm",name:"发布月份"}]);
 const dimName=k=>((DIMSX.find(d=>d.key===k)||{}).name||k);
 function fmtVal(m,v){
@@ -437,7 +435,7 @@ function applyFilter(){
     const title=r.ti?(r.ln?`<a class="tlink" href="${r.ln}" target="_blank" rel="noopener">${r.ti.replace(/</g,'&lt;')}</a>`:r.ti.replace(/</g,'&lt;')):'<span style="color:var(--muted)">—</span>';
     return `<tr><td>${i+1}</td><td class="id">${r.i}</td><td>${pipeOf(r)}</td><td style="max-width:220px">${title}</td><td>${r.gr||'—'}</td>
       <td>${labHTML(r.l0)}</td><td>${labHTML(disp(r.l1))}</td><td>${labHTML(disp(r.l2))}</td><td>${labHTML(disp(r.l3))}</td><td>${labHTML(disp(r.t))}</td>
-      <td class="num">${fmtVal('vv',r.vv)}</td><td class="num">${fmtVal('lr',r.lr)}</td><td class="num">${fmtVal('cr',r.cr)}</td><td class="num">${fmtVal('wr',r.wr)}</td><td class="num">${r.hl==null?'—':r.hl}</td><td class="num" style="color:var(--ink2)">${r.pt||'—'}</td></tr>`;
+      <td class="num">${fmtVal('vv',r.vv)}</td><td class="num">${fmtVal('lr',r.lr)}</td><td class="num">${fmtVal('cr',r.cr)}</td><td class="num">${fmtVal('wr',r.wr)}</td><td class="num" style="color:var(--ink2)">${r.pt||'—'}</td></tr>`;
   }).join("");
   document.getElementById("tableNote").textContent=rows.length>CAP?`表格仅显示前 ${CAP} 行（可点表头排序）；复制/导出含全部 ${rows.length} 个 ID。`:`共 ${rows.length} 行（可点表头排序）。`;
   const ta=document.getElementById("idText");if(ta.style.display==="block")ta.value=currentIds.join("\n");
@@ -454,10 +452,10 @@ document.getElementById("showTextBtn").addEventListener("click",()=>{const ta=do
 document.getElementById("csvBtn").addEventListener("click",()=>{
   const idset=new Set(currentIds),rows=REC.filter(r=>idset.has(r.i));
   const src=r=>[r.ph?'高热':'',r.pp?'PGC':'',r.pc?'评论区':''].filter(Boolean).join('|');
-  const header="projectid,来源,内容标题,内容链接,等级,l0,l0_zh,l1,l1_zh,l2,l2_zh,l3,l3_zh,题材,题材_zh,画风,交互,氛围,社交,曝光VV,点赞率,收藏率,view10率,热评数,热评总赞,发布日期";
+  const header="projectid,来源,内容标题,内容链接,等级,l0,l0_zh,l1,l1_zh,l2,l2_zh,l3,l3_zh,题材,题材_zh,画风,交互,氛围,社交,曝光VV,点赞率,收藏率,view10率,发布日期";
   const q=x=>`"${String(x==null?'':x).replace(/"/g,'""')}"`;
   const body=rows.map(r=>[r.i,src(r),r.ti,r.ln,r.gr,r.l0,zh(r.l0),r.l1,zh(r.l1),r.l2,zh(r.l2),r.l3,zh(r.l3),r.t,zh(r.t),r.a,r.n,r.v,r.s,
-    r.vv==null?'':r.vv,r.lr==null?'':r.lr+'%',r.cr==null?'':r.cr+'%',r.wr==null?'':r.wr+'%',r.hc==null?'':r.hc,r.hl==null?'':r.hl,r.pt].map(q).join(",")).join("\n");
+    r.vv==null?'':r.vv,r.lr==null?'':r.lr+'%',r.cr==null?'':r.cr+'%',r.wr==null?'':r.wr+'%',r.pt].map(q).join(",")).join("\n");
   const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,"+encodeURIComponent("﻿"+header+"\n"+body);a.download="loopit_filtered.csv";document.body.appendChild(a);a.click();a.remove();
 });
 function flash(id,msg){const b=document.getElementById(id);const o=b.textContent;b.textContent=msg;setTimeout(()=>b.textContent=o,1400);}
